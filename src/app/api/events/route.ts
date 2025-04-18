@@ -41,6 +41,23 @@ export async function POST(request: Request) {
       imageUrl,
     } = await request.json();
 
+    const eventsRef = ref(db, "events");
+    const eventsSnapshot = await get(eventsRef);
+
+    if (eventsSnapshot.exists()) {
+      const events = eventsSnapshot.val() as Record<string, Event>;
+      const titleExists = Object.values(events).some(
+        (eventData) => eventData.title === title
+      );
+
+      if (titleExists) {
+        return NextResponse.json(
+          { error: "An event with this title already exists" },
+          { status: 400 }
+        );
+      }
+    }
+
     const eventRef = ref(db, "events");
     const newEventRef = push(eventRef);
     await set(newEventRef, {

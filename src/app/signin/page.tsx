@@ -50,7 +50,7 @@ export default function Home() {
             onClick={handleSignIn}
             className="text-[#D41B2C] hover:text-[#B31824] font-semibold transition-all"
           >
-            Sign in with your @northeastern.edu account!
+            Sign in with Microsoft account!
           </button>
         </div>
       </div>

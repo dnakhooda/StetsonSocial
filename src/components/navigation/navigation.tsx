@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 export default function Navigation() {
   const router = useRouter();
-  const { user, logout } = useUserAuth();
+  const { user, isAdmin, logout } = useUserAuth();
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -58,6 +58,14 @@ export default function Navigation() {
             </Link>
             {user ? (
               <>
+                {isAdmin && (
+                  <Link
+                    href="/admin/users"
+                    className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <span className="text-white text-lg font-medium font-['Lexend']">
                   Welcome, {user.displayName}!
                 </span>

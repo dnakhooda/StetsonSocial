@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import Navigation from "@/components/navigation/navigation";
 import Event from "@/types/event";
 import Footer from "@/components/footer/footer";
+import { useUserAuth } from "@/contexts/userAuthContext";
+import isPastEvent from "@/utils/pastEvent";
 
 interface Edit {
   title: string;
@@ -27,8 +29,8 @@ interface EnhancedEventData extends Event {
 export default function EventPage() {
   const router = useRouter();
   const params = useParams();
-  const { data: session } = { data: null };
-  const eventTitle = params.eventTitle;
+  const { user, isAdmin } = useUserAuth();
+  const eventTitle = decodeURIComponent(params.eventTitle as string);
   const [isSignedUp, setIsSignedUp] = useState<boolean>(false);
   const [eventData, setEventData] = useState<EnhancedEventData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -43,10 +45,6 @@ export default function EventPage() {
   });
 
   useEffect(() => {
-    //initializeEvents();
-  }, []);
-
-  useEffect(() => {
     if (eventData) {
       setEditForm({
         title: eventData.title,
@@ -58,98 +56,81 @@ export default function EventPage() {
     }
   }, [eventData]);
 
-  const isEventOwner = false; //session?.user?.id === eventData?.creatorId;
-  const isAdmin = false; //session?.user?.admin;
+  const isEventOwner = user?.uid === eventData?.creatorId;
   const canManageEvent = isEventOwner || isAdmin;
 
-  const isPastEvent = (date: string, time: string) => {
-    const now = new Date();
-    const eventDateTime = new Date(`${date}T${time}`);
-    return eventDateTime < now;
-  };
-
-  const fetchUserDetails = async (userId: string) => {
+  const fetchEventData = async () => {
     try {
-      const response = await fetch(`/api/users?userId=${userId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch user details");
+      const response = await fetch("/api/events");
+
+      if (!response.ok) throw new Error("Failed to fetch events");
+
+      const data: Event[] = await response.json();
+      const event = data.filter(
+        (event: Event) => event.title === eventTitle
+      )[0];
+
+      if (!event) {
+        setError("Event not found");
+        setIsLoading(false);
+        return;
       }
-      return await response.json();
+
+      let participantsWithDetails: Participant[] = [];
+
+      if (event.attendees) {
+        participantsWithDetails = await Promise.all(
+          event.attendees.map(async (userId: string): Promise<Participant> => {
+            try {
+              const userResponse = await fetch(`/api/users?userId=${userId}`);
+              if (!userResponse.ok) {
+                throw new Error(`Failed to fetch user details for ${userId}`);
+              }
+              const userData = await userResponse.json();
+              return {
+                name: userData.displayName || "Unknown User",
+                username: userData.email || "@unknown",
+                id: userId,
+              };
+            } catch (error) {
+              console.error(
+                `Error fetching user details for ${userId}:`,
+                error
+              );
+              return {
+                name: "Unknown User",
+                username: "@unknown",
+                id: userId,
+              };
+            }
+          })
+        );
+      }
+
+      if (user?.uid && event.attendees?.includes(user.uid)) {
+        setIsSignedUp(true);
+      }
+
+      const enhancedEvent: EnhancedEventData = {
+        ...event,
+        participants: participantsWithDetails,
+      };
+
+      setEventData(enhancedEvent);
     } catch (error) {
-      console.error("Error fetching user details:", error);
-      return null;
+      console.error("Error fetching events:", error);
+      setError("Error fetching events");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchEventData = async () => {
-      try {
-        const response = await fetch("/api/events");
-        if (!response.ok) {
-          throw new Error("Failed to fetch events");
-        }
-        const events: Event[] = await response.json();
-
-        const event = events.find(
-          (e: Event) =>
-            e.title === decodeURIComponent(params.eventTitle as string)
-        );
-
-        if (!event) {
-          throw new Error("Event not found");
-        }
-
-        const attendeesWithDetails = await Promise.all(
-          event.attendees.map(async (userId) => {
-            const userDetails = await fetchUserDetails(userId);
-            return {
-              name: userDetails?.name || "Unknown User",
-              username: userDetails?.email || "@unknown",
-              id: userDetails?.id || "-1",
-            };
-          })
-        );
-
-        const transformedEvent = {
-          id: event.id,
-
-          creatorId: event.creatorId,
-          creatorName: event.creatorName,
-
-          title: event.title,
-          description: event.description,
-          location: event.location,
-          imageUrl: event.imageUrl,
-          date: event.date,
-          time: event.time,
-
-          attendees: event.attendees,
-          participants: attendeesWithDetails,
-        };
-
-        setEventData(transformedEvent);
-
-        if (false /*session?.user?.id*/) {
-          //setIsSignedUp(event.attendees.includes(/*session.user.id*/));
-        }
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error("Error fetching event:", error.message);
-          setError(error.message);
-        } else {
-          console.error("Error fetching event:", error);
-          setError("An unknown error occurred");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchEventData();
-  }, [params.eventTitle /*, session?.user?.id*/]);
+  }, [params.eventTitle, user]);
 
   const handleSignUp = async () => {
-    if (!session) {
+    if (!user) {
       router.push("/signin");
       return;
     }
@@ -160,9 +141,16 @@ export default function EventPage() {
     }
 
     try {
-      const response = await fetch(`/api/events/${eventData.id}/join`, {
-        method: "POST",
-      });
+      const response = await fetch(
+        `/api/events/${encodeURIComponent(eventData.id)}/join`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: user.uid }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -171,32 +159,7 @@ export default function EventPage() {
 
       setIsSignedUp(true);
 
-      const updatedResponse = await fetch("/api/events");
-      const events = await updatedResponse.json();
-      const updatedEvent = events.find((e: Event) => e.id === eventData.id);
-
-      if (updatedEvent) {
-        const attendeesWithDetails = await Promise.all<Participant[]>(
-          updatedEvent.attendees.map(async (userId: string) => {
-            const userDetails = await fetchUserDetails(userId);
-            return {
-              name: userDetails?.name || "Unknown User",
-              username: userDetails?.email || "@unknown",
-              id: userDetails?.id || "-1",
-            };
-          })
-        );
-
-        setEventData((prev) =>
-          prev
-            ? {
-                ...prev,
-                attendees: updatedEvent.attendees,
-                participants: attendeesWithDetails,
-              }
-            : null
-        );
-      }
+      await fetchEventData();
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error joining event:", error.message);
@@ -209,51 +172,32 @@ export default function EventPage() {
   };
 
   const handleRemoveParticipant = async (userId: string) => {
+    if (!eventData?.id) {
+      alert("Error: Event ID not found");
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/events/${eventData?.id}/remove`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch(
+        `/api/events/${encodeURIComponent(eventData.id)}/remove`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to remove participant");
       }
 
-      // Refresh event data
-      const updatedResponse = await fetch("/api/events");
-      const events = await updatedResponse.json();
-      const updatedEvent = events.find((e: Event) => e.id === eventData?.id);
+      await fetchEventData();
 
-      if (updatedEvent) {
-        // Fetch user details for all attendees
-        const attendeesWithDetails = await Promise.all(
-          updatedEvent.attendees.map(async (userId: string) => {
-            const userDetails = await fetchUserDetails(userId);
-            return {
-              name: userDetails?.name || "Unknown User",
-              username: userDetails?.email || "@unknown",
-              id: userDetails?.id || "-1",
-            };
-          })
-        );
-
-        setEventData((prev) =>
-          prev
-            ? {
-                ...prev,
-                attendees: updatedEvent.attendees,
-                participants: attendeesWithDetails,
-              }
-            : null
-        );
-
-        if (/*userId === session?.user?.id*/ false) {
-          //setIsSignedUp(false);
-        }
+      if (user && userId === user.uid) {
+        setIsSignedUp(false);
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -278,9 +222,14 @@ export default function EventPage() {
     }
 
     try {
-      const response = await fetch(`/api/events/${eventData?.id}/delete`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/events/${encodeURIComponent(eventData?.id || "")}/delete?userId=${
+          user?.uid
+        }&isAdmin=${isAdmin}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -304,36 +253,26 @@ export default function EventPage() {
     if (!canManageEvent) return;
 
     try {
-      const response = await fetch(`/api/events/${eventData?.id}/update`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editForm),
-      });
+      const response = await fetch(
+        `/api/events/${encodeURIComponent(eventData?.id || "")}/update?userId=${
+          user?.uid
+        }&isAdmin=${isAdmin}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editForm),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to update event");
       }
 
-      // Refresh event data
-      const updatedResponse = await fetch("/api/events");
-      const events = await updatedResponse.json();
-      const updatedEvent = events.find((e: Event) => e.id === eventData?.id);
-
-      if (updatedEvent) {
-        setEventData((prev) =>
-          prev
-            ? {
-                ...prev,
-                ...updatedEvent,
-                participants: prev.participants,
-              }
-            : null
-        );
-        setIsEditing(false);
-      }
+      setIsEditing(false);
+      router.push(`/events/${encodeURIComponent(editForm.title || "")}`);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error updating event:", error.message);
@@ -391,7 +330,7 @@ export default function EventPage() {
           left: 0;
           width: 100%;
           height: 100%;
-          background-image: url("/krentzman-quad.png");
+          background-image: url("/images/krentzman-quad.png");
           background-size: cover;
           background-position: center;
           opacity: 0.5;
@@ -414,7 +353,7 @@ export default function EventPage() {
                 alt={eventData.title}
                 className="w-full h-full object-cover"
                 onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  e.currentTarget.src = "/krentzman-quad.png";
+                  e.currentTarget.src = "/images/krentzman-quad.png";
                 }}
               />
             </div>
@@ -543,7 +482,7 @@ export default function EventPage() {
                 )}
               </div>
 
-              <button
+              {!isEditing && (<button
                 onClick={handleSignUp}
                 disabled={
                   isSignedUp || isPastEvent(eventData.date, eventData.time)
@@ -559,7 +498,7 @@ export default function EventPage() {
                   : isPastEvent(eventData.date, eventData.time)
                   ? "Event Has Passed"
                   : "Sign Up for Event"}
-              </button>
+              </button>)}
 
               {canManageEvent && !isEditing && (
                 <button
@@ -631,7 +570,9 @@ export default function EventPage() {
           </div>
         </div>
       </div>
-      <Footer />
+      <div className="relative z-10">
+        <Footer />
+      </div>
     </div>
   );
 }
