@@ -227,7 +227,7 @@ export default function EventPage() {
           user?.uid
         }&isAdmin=${isAdmin}`,
         {
-          method: "DELETE",
+          method: "POST",
         }
       );
 

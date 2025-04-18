@@ -1,17 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../../firebaseConfig";
 import { get, ref, remove } from "firebase/database";
 import Event from "@/types/event";
 
-interface Context {
-  params: {
-    eventId: string;
-  };
-};
-
-export async function DELETE(request: Request, context: Context) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { eventId: string } }
+) {
   try {
-    const eventId = context.params.eventId;
+    const eventId = params.eventId;
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
     const isAdmin = searchParams.get("isAdmin") === "true";
