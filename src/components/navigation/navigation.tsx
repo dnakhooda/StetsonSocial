@@ -9,7 +9,7 @@ export default function Navigation() {
     if (!router) {
       return;
     }
-    router.push('/login');
+    router.push('/signin');
   }
 
   const handleSignOut = async () => {
@@ -71,7 +71,7 @@ export default function Navigation() {
                   onClick={handleClick}
                   className="bg-white hover:bg-[#D41B2C] text-black hover:text-white font-semibold py-2 px-4 rounded-lg transition"
                 >
-                  Login
+                  Sign In
                 </button>
                 <button
                   onClick={() => router.push("/signup")}

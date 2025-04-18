@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Stetson Social",
-  description: "Stetson Social is an event platform for Stetson East and West students!",
+  description:
+    "Stetson Social is an event platform for Stetson East and West students!",
 };
 
 export default function RootLayout({

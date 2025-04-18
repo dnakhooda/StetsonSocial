@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Event from "@/types/event";
+import Footer from "@/components/footer/footer";
 export default function Home() {
   const [activeTab, setActiveTab] = useState("featured");
   const [events, setEvents] = useState<Event[]>([]);
@@ -122,7 +123,7 @@ export default function Home() {
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!session) {
-      router.push("/login");
+      router.push("/signin");
       return;
     }
 
@@ -648,14 +649,7 @@ export default function Home() {
           </div>
         </section>
       </main>
-
-      <footer className="bg-black mt-auto relative z-10">
-        <div className="container mx-auto px-6 py-8">
-          <div className="text-center text-white">
-            <p>&copy; 2025 Stetson Social. All rights not reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

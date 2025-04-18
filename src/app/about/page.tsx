@@ -1,5 +1,6 @@
 "use client";
 
+import Footer from "@/components/footer/footer";
 import Navigation from "@/components/navigation/navigation";
 
 export default function About() {
@@ -145,14 +146,7 @@ export default function About() {
           </div>
         </div>
       </main>
-
-      <footer className="bg-black mt-16">
-        <div className="container mx-auto px-6 py-8">
-          <div className="text-center text-white">
-            <p>&copy; 2025 Stetson Social. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

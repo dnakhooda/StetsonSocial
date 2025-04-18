@@ -1,12 +1,17 @@
 interface Event {
   id: string;
+
+  creatorId: string;
+  creatorName: string;
+
   title: string;
-  date: string;
-  time: string;
   description: string;
   location: string;
-  imageUrl: string | null;
-  creatorName: string;
+  imageUrl: string;
+  date: string;
+  time: string;
+
+  attendees: string[];
 }
 
 export default Event;
