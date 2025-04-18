@@ -53,7 +53,7 @@ export default function About() {
                 <div className="text-center">
                   <div className="w-32 h-32 mx-auto mb-4 overflow-hidden rounded-full">
                     <img
-                      src="/images/dan.jpeg"
+                      src="/images/Creators/dan.jpeg"
                       alt="Dan"
                       className="w-full h-full object-cover"
                     />
@@ -67,7 +67,7 @@ export default function About() {
                 <div className="text-center">
                   <div className="w-32 h-32 mx-auto mb-4 overflow-hidden rounded-full">
                     <img
-                      src="/images/edgar.jpeg"
+                      src="/images/Creators/edgar.jpeg"
                       alt="Edgar"
                       className="w-full h-full object-cover"
                     />
@@ -81,7 +81,7 @@ export default function About() {
                 <div className="text-center">
                   <div className="w-32 h-32 mx-auto mb-4 overflow-hidden rounded-full">
                     <img
-                      src="/images/gio.jpeg"
+                      src="/images/Creators/gio.jpeg"
                       alt="Gio"
                       className="w-full h-full object-cover"
                     />
@@ -95,7 +95,7 @@ export default function About() {
                 <div className="text-center">
                   <div className="w-32 h-32 mx-auto mb-4 overflow-hidden rounded-full">
                     <img
-                      src="/images/jeangio.jpeg"
+                      src="/images/Creators/jeangio.jpeg"
                       alt="JeanGio"
                       className="w-full h-full object-cover"
                     />

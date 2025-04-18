@@ -6,17 +6,11 @@ import Image from "next/image";
 import Navigation from "@/components/navigation/navigation";
 import Event from "@/types/event";
 import Footer from "@/components/footer/footer";
-
+import isPastEvent from "@/utils/pastEvent";
+import sortEvents from "@/utils/sortEvents";
 export default function PastEvents() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const router = useRouter();
-
-  const isPastEvent = (date: string, time: string) => {
-    const now = new Date();
-    const eventDateTime = new Date(`${date}T${time}`);
-    return eventDateTime < now;
-  };
 
   useEffect(() => {
     fetchEvents();
@@ -25,36 +19,18 @@ export default function PastEvents() {
   const fetchEvents = async () => {
     try {
       const response = await fetch("/api/events");
-      if (!response.ok) {
-        throw new Error("Failed to fetch events");
-      }
+
+      if (!response.ok) throw new Error("Failed to fetch events");
+
       const data = await response.json();
-      // Sort events by date
-      const sortedEvents = data.sort(
-        (a: Event, b: Event) =>
-          new Date(b.date).getTime() - new Date(a.date).getTime()
+      const sortedEvents = sortEvents(data);
+      const pastEvents = sortedEvents.filter((event) =>
+        isPastEvent(event.date, event.time)
       );
-      setEvents(sortedEvents);
+
+      setPastEvents(pastEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
-      // If API fails, try to get events from localStorage
-      if (typeof window !== "undefined") {
-        try {
-          const storedEvents = localStorage.getItem("events");
-          if (storedEvents) {
-            const parsedEvents = JSON.parse(storedEvents);
-            const sortedEvents = parsedEvents.sort(
-              (a: Event, b: Event) =>
-                new Date(b.date).getTime() - new Date(a.date).getTime()
-            );
-            setEvents(sortedEvents);
-          }
-        } catch (localError) {
-          console.error("Error loading events from localStorage:", localError);
-        }
-      }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -72,12 +48,7 @@ export default function PastEvents() {
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D41B2C] mx-auto"></div>
-          </div>
-        ) : events.filter((event) => isPastEvent(event.date, event.time))
-            .length === 0 ? (
+        {pastEvents.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-xl font-semibold font-['Lexend']">
               No past events to display
@@ -85,10 +56,8 @@ export default function PastEvents() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events
-              .filter((event) => isPastEvent(event.date, event.time))
-              .map((event) => (
-                <div
+            {pastEvents.map((event) => (
+              <div
                   key={event.id}
                   className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
                 >

@@ -19,49 +19,49 @@ const ambassadors: Ambassador[] = [
     id: 1,
     name: "Ben Jeter",
     role: "Residence Director",
-    image: "/images/ben.jpeg",
+    image: "/images/RAs/ben.jpeg",
     email: "b.jeter@northeastern.edu",
   },
   {
     id: 2,
     name: "Nicky Mosharaf",
     role: "Residence Assistant",
-    image: "/images/nicky.jpeg",
+    image: "/images/RAs/nicky.jpeg",
     email: "mosharaf.n@northeastern.edu",
   },
   {
     id: 3,
     name: "Johan Almanzar",
     role: "Residence Assistant",
-    image: "/images/johan.jpeg",
+    image: "/images/RAs/johan.jpeg",
     email: "almanzar.j@northeastern.edu",
   },
   {
     id: 4,
     name: "Krish Bansal",
     role: "Residence Assistant",
-    image: "/images/krish.jpeg",
+    image: "/images/RAs/krish.jpeg",
     email: "bansal.krish@northeastern.edu",
   },
   {
     id: 5,
     name: "Olivier John Ndjike Nzia",
     role: "Residence Assistant",
-    image: "/images/olivier.jpg",
+    image: "/images/RAs/olivier.jpg",
     email: "ndjikenzia.o@northeastern.edu",
   },
   {
     id: 6,
     name: "Sophia Nguyen",
     role: "Residence Assistant",
-    image: "/images/sophia.jpg",
+    image: "/images/RAs/sophia.jpg",
     email: "nguyen.sop@northeastern.edu",
   },
   {
     id: 7,
     name: "Pablo Cardona Barber",
     role: "Residence Assistant",
-    image: "/images/pablo.jpg",
+    image: "/images/RAs/pablo.jpg",
     email: "cardonabarber.p@northeastern.edu",
   },
 ];
@@ -72,14 +72,6 @@ export default function ContactPage() {
   const [message, setMessage] = useState<string>("");
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
-  const router = useRouter();
-  const { data: session } = { data: null };
-
-  const handleSignOut = async () => {};
-
-  const handleClick = () => {
-    router.push("/signin");
-  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

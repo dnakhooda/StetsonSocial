@@ -6,9 +6,16 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Event from "@/types/event";
 import Footer from "@/components/footer/footer";
+import sortEvents from "@/utils/sortEvents";
+import isPastEvent from "@/utils/pastEvent";
+import { useUserAuth } from "@/contexts/userAuthContext";
+import { eventImages } from "@/utils/eventImages";
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState("featured");
   const [events, setEvents] = useState<Event[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -18,16 +25,9 @@ export default function Home() {
     location: "",
     imageUrl: null,
   });
-
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const router = useRouter();
-  const { data: session } = { data: null };
-
-  const isPastEvent = (date: string, time: string) => {
-    const now = new Date();
-    const eventDateTime = new Date(`${date}T${time}`);
-    return eventDateTime < now;
-  };
+  const { user } = useUserAuth();
 
   useEffect(() => {
     fetchEvents();
@@ -36,93 +36,30 @@ export default function Home() {
   const fetchEvents = async () => {
     try {
       const response = await fetch("/api/events");
-      if (!response.ok) {
-        throw new Error("Failed to fetch events");
-      }
+
+      if (!response.ok) throw new Error("Failed to fetch events");
+
       const data = await response.json();
-      const sortedEvents = data.sort((a: Event, b: Event) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        return dateA.getTime() - dateB.getTime();
-      });
+      const sortedEvents = sortEvents(data);
+      const upcomingEvents = sortedEvents.filter(
+        (event) => !isPastEvent(event.date, event.time)
+      );
+      const pastEvents = sortedEvents.filter((event) =>
+        isPastEvent(event.date, event.time)
+      );
+
+      setUpcomingEvents(upcomingEvents);
+      setPastEvents(pastEvents);
       setEvents(sortedEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
-      if (typeof window !== "undefined") {
-        try {
-          const storedEvents = localStorage.getItem("events");
-          if (storedEvents) {
-            const parsedEvents = JSON.parse(storedEvents);
-            const sortedEvents = parsedEvents.sort((a: Event, b: Event) => {
-              const dateA = new Date(a.date);
-              const dateB = new Date(b.date);
-              return dateA.getTime() - dateB.getTime();
-            });
-            setEvents(sortedEvents);
-          }
-        } catch (localError) {
-          console.error("Error loading events from localStorage:", localError);
-        }
-      }
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload an image file");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB");
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to upload image");
-      }
-
-      const data = await response.json();
-
-      if (!data.success || !data.url) {
-        throw new Error("Invalid response from server");
-      }
-
-      setFormData((prev) => ({ ...prev, imageUrl: data.url }));
-    } catch (error: unknown) {
-      console.error("Error uploading image:", error);
-      if (error instanceof Error) {
-        alert("Failed to upload image: " + error.message);
-      } else {
-        alert("Failed to upload image: " + String(error));
-      }
-      setImagePreview(null);
-      setFormData((prev) => ({ ...prev, imageUrl: null }));
     }
   };
 
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!session) {
+
+    if (!user) {
       router.push("/signin");
       return;
     }
@@ -130,12 +67,15 @@ export default function Home() {
     setIsLoading(true);
     try {
       const eventData = {
+        creatorId: user.uid,
+        creatorName: user.displayName,
         title: formData.title,
-        date: formData.date,
-        time: formData.time,
         description: formData.description,
         location: formData.location,
-        imageUrl: formData.imageUrl,
+        imageUrl: selectedImage || "/images/krentzman-quad.png",
+        date: formData.date,
+        time: formData.time,
+        attendees: {},
       };
 
       const response = await fetch("/api/events", {
@@ -161,7 +101,6 @@ export default function Home() {
         location: "",
         imageUrl: null,
       });
-      setImagePreview(null);
       fetchEvents();
       setActiveTab("featured");
     } catch (error: unknown) {
@@ -279,7 +218,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Featured Events Section */}
         <section className="container mx-auto px-6 py-8 relative z-20">
           <div className="bg-white rounded-lg p-6 shadow-lg relative">
             <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-black via-black to-[#D41B2C] p-[2px]">
@@ -328,12 +266,9 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Featured Events Grid */}
               {activeTab === "featured" && (
                 <div>
-                  {events.filter(
-                    (event) => !isPastEvent(event.date, event.time)
-                  ).length === 0 ? (
+                  {upcomingEvents.length === 0 ? (
                     <div className="text-center text-black">
                       <p className="text-lg font-semibold font-['Lexend']">
                         No upcoming events to display
@@ -342,70 +277,62 @@ export default function Home() {
                   ) : (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {events
-                          .filter(
-                            (event) => !isPastEvent(event.date, event.time)
-                          )
-                          .slice(0, 3)
-                          .map((event) => (
-                            <div
-                              key={event.id}
-                              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
-                            >
-                              <div className="relative h-48">
-                                {event.imageUrl ? (
-                                  <Image
-                                    src={event.imageUrl}
-                                    alt={event.title}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    priority
-                                  />
-                                ) : (
-                                  <div className="w-full h-full bg-[#D41B2C]"></div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                <div className="absolute bottom-4 left-4">
-                                  <h3 className="text-xl font-semibold text-white">
-                                    {event.title}
-                                  </h3>
-                                  <p className="text-white">
-                                    {new Date(event.date).toLocaleDateString()}{" "}
-                                    at{" "}
-                                    {new Date(
-                                      `2000-01-01T${event.time}`
-                                    ).toLocaleTimeString([], {
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    })}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="p-6">
-                                <p className="text-gray-600 mb-2">
-                                  Location: {event.location}
+                        {upcomingEvents.slice(0, 3).map((event) => (
+                          <div
+                            key={event.id}
+                            className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
+                          >
+                            <div className="relative h-48">
+                              {event.imageUrl ? (
+                                <Image
+                                  src={event.imageUrl}
+                                  alt={event.title}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                  priority
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-[#D41B2C]"></div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                              <div className="absolute bottom-4 left-4">
+                                <h3 className="text-xl font-semibold text-white">
+                                  {event.title}
+                                </h3>
+                                <p className="text-white">
+                                  {new Date(event.date).toLocaleDateString()} at{" "}
+                                  {new Date(
+                                    `2000-01-01T${event.time}`
+                                  ).toLocaleTimeString([], {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  })}
                                 </p>
-                                <p className="text-gray-700 mb-4">
-                                  {event.description}
-                                </p>
-                                <p className="text-gray-600 mb-4">
-                                  Created by: {event.creatorName}
-                                </p>
-                                <button
-                                  onClick={() => handleJoinEvent(event.title)}
-                                  className="w-full bg-[#D41B2C] hover:bg-[#B31824] text-white font-semibold py-2 px-4 rounded-lg transition"
-                                >
-                                  Join Event
-                                </button>
                               </div>
                             </div>
-                          ))}
+                            <div className="p-6">
+                              <p className="text-gray-600 mb-2">
+                                Location: {event.location}
+                              </p>
+                              <p className="text-gray-700 mb-4">
+                                {event.description}
+                              </p>
+                              <p className="text-gray-600 mb-4">
+                                Created by: {event.creatorName}
+                              </p>
+                              <button
+                                onClick={() => handleJoinEvent(event.title)}
+                                className="w-full bg-[#D41B2C] hover:bg-[#B31824] text-white font-semibold py-2 px-4 rounded-lg transition"
+                              >
+                                Join Event
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      {events.filter(
-                        (event) => !isPastEvent(event.date, event.time)
-                      ).length > 3 && (
+                      {upcomingEvents.length > 3 && (
                         <div className="text-center mt-8">
                           <button
                             onClick={() => router.push("/upcomingevents")}
@@ -420,11 +347,9 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Past Events Section */}
               {activeTab === "past" && (
                 <div>
-                  {events.filter((event) => isPastEvent(event.date, event.time))
-                    .length === 0 ? (
+                  {pastEvents.length === 0 ? (
                     <div className="text-center text-black">
                       <p className="text-lg font-semibold font-['Lexend']">
                         No past events to display
@@ -433,64 +358,56 @@ export default function Home() {
                   ) : (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {events
-                          .filter((event) =>
-                            isPastEvent(event.date, event.time)
-                          )
-                          .slice(0, 3)
-                          .map((event) => (
-                            <div
-                              key={event.id}
-                              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
-                            >
-                              <div className="relative h-48">
-                                {event.imageUrl ? (
-                                  <Image
-                                    src={event.imageUrl}
-                                    alt={event.title}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    priority
-                                  />
-                                ) : (
-                                  <div className="w-full h-full bg-[#D41B2C]"></div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                <div className="absolute bottom-4 left-4">
-                                  <h3 className="text-xl font-semibold text-white">
-                                    {event.title}
-                                  </h3>
-                                  <p className="text-white">
-                                    {new Date(event.date).toLocaleDateString()}{" "}
-                                    at{" "}
-                                    {new Date(
-                                      `2000-01-01T${event.time}`
-                                    ).toLocaleTimeString([], {
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    })}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="p-6">
-                                <p className="text-gray-600 mb-2">
-                                  Location: {event.location}
-                                </p>
-                                <p className="text-gray-700 mb-4">
-                                  {event.description}
-                                </p>
-                                <p className="text-gray-600 mb-4">
-                                  Created by: {event.creatorName}
+                        {pastEvents.slice(0, 3).map((event) => (
+                          <div
+                            key={event.id}
+                            className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
+                          >
+                            <div className="relative h-48">
+                              {event.imageUrl ? (
+                                <Image
+                                  src={event.imageUrl}
+                                  alt={event.title}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                  priority
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-[#D41B2C]"></div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                              <div className="absolute bottom-4 left-4">
+                                <h3 className="text-xl font-semibold text-white">
+                                  {event.title}
+                                </h3>
+                                <p className="text-white">
+                                  {new Date(event.date).toLocaleDateString()} at{" "}
+                                  {new Date(
+                                    `2000-01-01T${event.time}`
+                                  ).toLocaleTimeString([], {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  })}
                                 </p>
                               </div>
                             </div>
-                          ))}
+                            <div className="p-6">
+                              <p className="text-gray-600 mb-2">
+                                Location: {event.location}
+                              </p>
+                              <p className="text-gray-700 mb-4">
+                                {event.description}
+                              </p>
+                              <p className="text-gray-600 mb-4">
+                                Created by: {event.creatorName}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      {events.filter((event) =>
-                        isPastEvent(event.date, event.time)
-                      ).length > 3 && (
+                      {pastEvents.length > 3 && (
                         <div className="text-center mt-8">
                           <button
                             onClick={() => router.push("/pastevents")}
@@ -591,46 +508,31 @@ export default function Home() {
                       <label className="block text-sm font-medium text-black mb-2">
                         Event Image
                       </label>
-                      <div className="space-y-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="w-full px-4 py-2 rounded-lg border-2 border-black bg-white focus:outline-none focus:border-[#D41B2C] text-black"
-                        />
-                        {imagePreview && (
-                          <div className="relative">
-                            <img
-                              src={imagePreview}
-                              alt="Preview"
-                              className="w-full h-48 object-cover rounded-lg"
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {eventImages.map((image) => (
+                          <div
+                            key={image.id}
+                            className={`relative cursor-pointer rounded-lg overflow-hidden border-2 ${
+                              selectedImage === image.url
+                                ? "border-[#D41B2C]"
+                                : "border-transparent"
+                            }`}
+                            onClick={() => setSelectedImage(image.url)}
+                          >
+                            <Image
+                              src={image.url}
+                              alt={image.label}
+                              width={200}
+                              height={150}
+                              className="w-full h-32 object-cover"
                             />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setImagePreview(null);
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  imageUrl: null,
-                                }));
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </button>
+                            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-2">
+                              <p className="text-white text-sm">
+                                {image.label}
+                              </p>
+                            </div>
                           </div>
-                        )}
+                        ))}
                       </div>
                     </div>
                     <button

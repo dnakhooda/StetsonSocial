@@ -12,7 +12,6 @@ export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
-  const { data: session } = { data: null };
 
   useEffect(() => {
     fetchEvents();
