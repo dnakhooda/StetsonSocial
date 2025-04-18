@@ -1,9 +1,10 @@
-# StetsonSocial
-Stetson Social is an event platform for Stetson East and West students!
+# 🎓 StetsonSocial
 
-Stetson Social was created using the [Next.js](https://nextjs.org) framework.
+Stetson Social is an event platform for Stetson East and West students! 🏫
 
-## Running the App
+Stetson Social was created using the [Next.js](https://nextjs.org) framework. ⚡️
+
+## 🚀 Running the App
 
 After cloning the repository, use one of the following commands to start a local server.
 
@@ -17,4 +18,4 @@ pnpm dev
 bun dev
 ```
 
-If you go to [localhost:3000](http://localhost:3000/), you should see the Stetson Social project!
+If you go to [localhost:3000](http://localhost:3000/), you should see the Stetson Social project! 🎉
