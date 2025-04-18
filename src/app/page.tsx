@@ -13,7 +13,6 @@ import { eventImages } from "@/utils/eventImages";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("featured");
-  const [events, setEvents] = useState<Event[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +49,6 @@ export default function Home() {
 
       setUpcomingEvents(upcomingEvents);
       setPastEvents(pastEvents);
-      setEvents(sortedEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -91,7 +89,7 @@ export default function Home() {
         throw new Error(errorData.error || "Failed to create event");
       }
 
-      const createdEvent = await response.json();
+      await response.json();
 
       setFormData({
         title: "",

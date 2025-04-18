@@ -9,7 +9,6 @@ import Footer from "@/components/footer/footer";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
 

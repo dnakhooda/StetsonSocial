@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useUserAuth } from "@/contexts/userAuthContext";
 
 export default function Home() {
-  let router = useRouter();
+  const router = useRouter();
   const { login } = useUserAuth();
 
   const handleCloseClick = (e: React.MouseEvent<HTMLButtonElement>) => {
