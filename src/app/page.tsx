@@ -1,102 +1,660 @@
+"use client";
+
+import Navigation from "@/components/navigation/navigation";
 import Image from "next/image";
-
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Event from "@/types/event";
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [activeTab, setActiveTab] = useState("featured");
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    date: "",
+    time: "",
+    description: "",
+    location: "",
+    imageUrl: null,
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const router = useRouter();
+  const { data: session } = { data: null };
+
+  const isPastEvent = (date: string, time: string) => {
+    const now = new Date();
+    const eventDateTime = new Date(`${date}T${time}`);
+    return eventDateTime < now;
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch("/api/events");
+      if (!response.ok) {
+        throw new Error("Failed to fetch events");
+      }
+      const data = await response.json();
+      const sortedEvents = data.sort((a: Event, b: Event) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateA.getTime() - dateB.getTime();
+      });
+      setEvents(sortedEvents);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      if (typeof window !== "undefined") {
+        try {
+          const storedEvents = localStorage.getItem("events");
+          if (storedEvents) {
+            const parsedEvents = JSON.parse(storedEvents);
+            const sortedEvents = parsedEvents.sort((a: Event, b: Event) => {
+              const dateA = new Date(a.date);
+              const dateB = new Date(b.date);
+              return dateA.getTime() - dateB.getTime();
+            });
+            setEvents(sortedEvents);
+          }
+        } catch (localError) {
+          console.error("Error loading events from localStorage:", localError);
+        }
+      }
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload an image file");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size must be less than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.url) {
+        throw new Error("Invalid response from server");
+      }
+
+      setFormData((prev) => ({ ...prev, imageUrl: data.url }));
+    } catch (error: unknown) {
+      console.error("Error uploading image:", error);
+      if (error instanceof Error) {
+        alert("Failed to upload image: " + error.message);
+      } else {
+        alert("Failed to upload image: " + String(error));
+      }
+      setImagePreview(null);
+      setFormData((prev) => ({ ...prev, imageUrl: null }));
+    }
+  };
+
+  const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!session) {
+      router.push("/login");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const eventData = {
+        title: formData.title,
+        date: formData.date,
+        time: formData.time,
+        description: formData.description,
+        location: formData.location,
+        imageUrl: formData.imageUrl,
+      };
+
+      const response = await fetch("/api/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create event");
+      }
+
+      const createdEvent = await response.json();
+
+      setFormData({
+        title: "",
+        date: "",
+        time: "",
+        description: "",
+        location: "",
+        imageUrl: null,
+      });
+      setImagePreview(null);
+      fetchEvents();
+      setActiveTab("featured");
+    } catch (error: unknown) {
+      console.error("Error creating event:", error);
+      if (error instanceof Error) {
+        alert("Failed to create event: " + error.message);
+      } else {
+        alert("Failed to create event: " + String(error));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleJoinEvent = (eventTitle: string) => {
+    router.push(`/events/${eventTitle}`);
+  };
+
+  return (
+    <div className="min-h-screen bg-white text-black relative overflow-hidden flex flex-col">
+      <style jsx>{`
+        @font-face {
+          font-family: "Big Shoulders Inline";
+          src: url("/fonts/BigShouldersInline-VariableFont_opsz,wght.ttf")
+            format("truetype-variations");
+          font-weight: 100 900;
+        }
+
+        .text-shadow-white {
+          text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff,
+            1px 1px 0 #fff, 0 0 10px rgba(0, 0, 0, 0.5),
+            0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-text {
+          font-family: "Big Shoulders Inline", sans-serif;
+          color: #000000;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+          line-height: 1.2;
+        }
+
+        .background-image {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-image: url("/images/krentzman-quad.png");
+          background-size: cover;
+          background-position: center;
+          opacity: 0.7;
+          filter: brightness(1.2) saturate(1.1);
+          pointer-events: none;
+          z-index: 0;
+        }
+        @keyframes swirl {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        @keyframes bounce {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+        .animate-swirl {
+          background-size: 200% 200%;
+          animation: swirl 15s ease infinite;
+        }
+        .animate-bounce {
+          animation: bounce 2s ease-in-out infinite;
+        }
+        .northeastern-red {
+          color: #d41b2c;
+        }
+        .northeastern-red-bg {
+          background-color: #000000;
+        }
+        .northeastern-red-border {
+          border-color: #d41b2c;
+        }
+      `}</style>
+
+      <div className="background-image" />
+
+      <Navigation />
+
+      <main className="flex-grow">
+        <section className="container mx-auto px-6 py-16 relative z-10">
+          <div className="text-center">
+            <h2 className="text-6xl font-bold mb-6 text-black animate-bounce font-['Lexend']">
+              <span className="text-shadow-white">Discover</span>{" "}
+              <span className="text-shadow-white">Events</span>{" "}
+              <span className="text-shadow-white">in</span>{" "}
+              <span className="text-shadow-white">Stetson</span>{" "}
+              <span className="text-shadow-white">East/West!</span>
+            </h2>
+            <button
+              onClick={() => router.push("/learnmore")}
+              className="bg-[#D41B2C] text-white font-bold py-3 px-8 rounded-full transition hover:bg-[#B31824] mt-8"
+            >
+              Learn More
+            </button>
+          </div>
+        </section>
+
+        {/* Featured Events Section */}
+        <section className="container mx-auto px-6 py-8 relative z-20">
+          <div className="bg-white rounded-lg p-6 shadow-lg relative">
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-black via-black to-[#D41B2C] p-[2px]">
+              <div className="bg-white rounded-lg h-full w-full"></div>
+            </div>
+            <div className="relative bg-white rounded-lg p-6">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-bold text-black">
+                  {activeTab === "featured"
+                    ? "Featured Events"
+                    : activeTab === "past"
+                    ? "Past Events"
+                    : "Event Creator"}
+                </h2>
+                <div className="space-x-4">
+                  <button
+                    onClick={() => setActiveTab("featured")}
+                    className={`px-6 py-2 rounded-lg transition border-2 ${
+                      activeTab === "featured"
+                        ? "bg-[#D41B2C] text-white"
+                        : "text-black hover:bg-[#D41B2C] hover:text-white"
+                    } border-[#D41B2C] font-['Lexend']`}
+                  >
+                    Events
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("past")}
+                    className={`px-6 py-2 rounded-lg transition border-2 ${
+                      activeTab === "past"
+                        ? "bg-[#D41B2C] text-white"
+                        : "text-black hover:bg-[#D41B2C] hover:text-white"
+                    } border-[#D41B2C] font-['Lexend']`}
+                  >
+                    Past Events
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("create")}
+                    className={`px-6 py-2 rounded-lg transition border-2 ${
+                      activeTab === "create"
+                        ? "bg-[#D41B2C] text-white"
+                        : "text-black hover:bg-[#D41B2C] hover:text-white"
+                    } border-[#D41B2C] font-['Lexend']`}
+                  >
+                    Create Event
+                  </button>
+                </div>
+              </div>
+
+              {/* Featured Events Grid */}
+              {activeTab === "featured" && (
+                <div>
+                  {events.filter(
+                    (event) => !isPastEvent(event.date, event.time)
+                  ).length === 0 ? (
+                    <div className="text-center text-black">
+                      <p className="text-lg font-semibold font-['Lexend']">
+                        No upcoming events to display
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {events
+                          .filter(
+                            (event) => !isPastEvent(event.date, event.time)
+                          )
+                          .slice(0, 3)
+                          .map((event) => (
+                            <div
+                              key={event.id}
+                              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
+                            >
+                              <div className="relative h-48">
+                                {event.imageUrl ? (
+                                  <Image
+                                    src={event.imageUrl}
+                                    alt={event.title}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    priority
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-[#D41B2C]"></div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                <div className="absolute bottom-4 left-4">
+                                  <h3 className="text-xl font-semibold text-white">
+                                    {event.title}
+                                  </h3>
+                                  <p className="text-white">
+                                    {new Date(event.date).toLocaleDateString()}{" "}
+                                    at{" "}
+                                    {new Date(
+                                      `2000-01-01T${event.time}`
+                                    ).toLocaleTimeString([], {
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="p-6">
+                                <p className="text-gray-600 mb-2">
+                                  Location: {event.location}
+                                </p>
+                                <p className="text-gray-700 mb-4">
+                                  {event.description}
+                                </p>
+                                <p className="text-gray-600 mb-4">
+                                  Created by: {event.creatorName}
+                                </p>
+                                <button
+                                  onClick={() => handleJoinEvent(event.title)}
+                                  className="w-full bg-[#D41B2C] hover:bg-[#B31824] text-white font-semibold py-2 px-4 rounded-lg transition"
+                                >
+                                  Join Event
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                      {events.filter(
+                        (event) => !isPastEvent(event.date, event.time)
+                      ).length > 3 && (
+                        <div className="text-center mt-8">
+                          <button
+                            onClick={() => router.push("/upcomingevents")}
+                            className="bg-[#D41B2C] hover:bg-[#B31824] text-white font-bold py-3 px-8 rounded-full transition transform hover:scale-105"
+                          >
+                            See More Events
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Past Events Section */}
+              {activeTab === "past" && (
+                <div>
+                  {events.filter((event) => isPastEvent(event.date, event.time))
+                    .length === 0 ? (
+                    <div className="text-center text-black">
+                      <p className="text-lg font-semibold font-['Lexend']">
+                        No past events to display
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {events
+                          .filter((event) =>
+                            isPastEvent(event.date, event.time)
+                          )
+                          .slice(0, 3)
+                          .map((event) => (
+                            <div
+                              key={event.id}
+                              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
+                            >
+                              <div className="relative h-48">
+                                {event.imageUrl ? (
+                                  <Image
+                                    src={event.imageUrl}
+                                    alt={event.title}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    priority
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-[#D41B2C]"></div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                <div className="absolute bottom-4 left-4">
+                                  <h3 className="text-xl font-semibold text-white">
+                                    {event.title}
+                                  </h3>
+                                  <p className="text-white">
+                                    {new Date(event.date).toLocaleDateString()}{" "}
+                                    at{" "}
+                                    {new Date(
+                                      `2000-01-01T${event.time}`
+                                    ).toLocaleTimeString([], {
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="p-6">
+                                <p className="text-gray-600 mb-2">
+                                  Location: {event.location}
+                                </p>
+                                <p className="text-gray-700 mb-4">
+                                  {event.description}
+                                </p>
+                                <p className="text-gray-600 mb-4">
+                                  Created by: {event.creatorName}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                      {events.filter((event) =>
+                        isPastEvent(event.date, event.time)
+                      ).length > 3 && (
+                        <div className="text-center mt-8">
+                          <button
+                            onClick={() => router.push("/pastevents")}
+                            className="bg-[#D41B2C] hover:bg-[#B31824] text-white font-bold py-3 px-8 rounded-full transition transform hover:scale-105"
+                          >
+                            See All Past Events
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "create" && (
+                <div className="max-w-md mx-auto">
+                  <form className="space-y-4" onSubmit={handleCreateEvent}>
+                    <div>
+                      <label className="block text-sm font-medium text-black mb-2">
+                        Event Title
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.title}
+                        onChange={(e) =>
+                          setFormData({ ...formData, title: e.target.value })
+                        }
+                        className="w-full px-4 py-2 rounded-lg border-2 border-black bg-white focus:outline-none focus:border-[#D41B2C] text-black"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-black mb-2">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.date}
+                          onChange={(e) =>
+                            setFormData({ ...formData, date: e.target.value })
+                          }
+                          className="w-full px-4 py-2 rounded-lg border-2 border-black bg-white focus:outline-none focus:border-[#D41B2C] text-black"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-black mb-2">
+                          Time
+                        </label>
+                        <input
+                          type="time"
+                          value={formData.time}
+                          onChange={(e) =>
+                            setFormData({ ...formData, time: e.target.value })
+                          }
+                          className="w-full px-4 py-2 rounded-lg border-2 border-black bg-white focus:outline-none focus:border-[#D41B2C] text-black"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-black mb-2">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            location: e.target.value,
+                          })
+                        }
+                        placeholder="e.g., Stetson East Lounge"
+                        className="w-full px-4 py-2 rounded-lg border-2 border-black bg-white focus:outline-none focus:border-[#D41B2C] text-black"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-black mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            description: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2 rounded-lg border-2 border-black bg-white focus:outline-none focus:border-[#D41B2C] text-black"
+                        rows={4}
+                        required
+                      ></textarea>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-black mb-2">
+                        Event Image
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="w-full px-4 py-2 rounded-lg border-2 border-black bg-white focus:outline-none focus:border-[#D41B2C] text-black"
+                        />
+                        {imagePreview && (
+                          <div className="relative">
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              className="w-full h-48 object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setImagePreview(null);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  imageUrl: null,
+                                }));
+                              }}
+                              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className={`w-full bg-[#D41B2C] text-white font-bold py-2 px-4 rounded-lg transition hover:bg-[#B31824] ${
+                        isLoading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {isLoading ? "Creating Event..." : "Create Event"}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      <footer className="bg-black mt-auto relative z-10">
+        <div className="container mx-auto px-6 py-8">
+          <div className="text-center text-white">
+            <p>&copy; 2025 Stetson Social. All rights not reserved.</p>
+          </div>
+        </div>
       </footer>
     </div>
   );
