@@ -3,12 +3,15 @@ import { db } from "../../../../../../firebaseConfig";
 import { get, ref, remove } from "firebase/database";
 import Event from "@/types/event";
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { eventId: string } }
-) {
+interface Context {
+  params: {
+    eventId: string;
+  };
+};
+
+export async function DELETE(request: Request, context: Context) {
   try {
-    const eventId = params.eventId;
+    const eventId = context.params.eventId;
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
     const isAdmin = searchParams.get("isAdmin") === "true";
