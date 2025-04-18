@@ -1,18 +1,21 @@
+import { useUserAuth } from "@/contexts/userAuthContext";
 import Link from "next/link";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
 export default function Navigation() {
   const router = useRouter();
+  const { user, logout } = useUserAuth();
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!router) {
       return;
     }
-    router.push('/signin');
-  }
+    router.push("/signin");
+  };
 
   const handleSignOut = async () => {
+    await logout();
     router.push(`/`);
   };
 
@@ -53,10 +56,10 @@ export default function Navigation() {
             >
               Contact
             </Link>
-            {/* {session ? (
+            {user ? (
               <>
                 <span className="text-white text-lg font-medium font-['Lexend']">
-                  Welcome, {session.user.name}!
+                  Welcome, {user.displayName}!
                 </span>
                 <button
                   onClick={handleSignOut}
@@ -73,14 +76,8 @@ export default function Navigation() {
                 >
                   Sign In
                 </button>
-                <button
-                  onClick={() => router.push("/signup")}
-                  className="bg-white hover:bg-[#D41B2C] text-black hover:text-white font-semibold py-2 px-4 rounded-lg transition"
-                >
-                  Sign Up
-                </button>
               </>
-            )} */}
+            )}
           </nav>
         </div>
       </div>
