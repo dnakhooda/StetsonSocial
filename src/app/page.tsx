@@ -43,7 +43,6 @@ export default function Home() {
       const data = await response.json();
       const sortedEvents = sortEvents(data);
 
-      const now = new Date();
       const adminEvents = sortedEvents.filter(
         (event) => !isPastEvent(event.date, event.time) && event.isAdminEvent
       );
