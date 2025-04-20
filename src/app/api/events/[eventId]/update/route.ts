@@ -38,6 +38,13 @@ export async function PUT(request: Request) {
       );
     }
 
+    if (filter.isProfane(location)) {
+      return NextResponse.json(
+        { error: "Event location contains inappropriate language" },
+        { status: 400 }
+      );
+    }
+
     const eventRef = ref(db, `events/${eventId}`);
     const snapshot = await get(eventRef);
 

@@ -59,6 +59,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (filter.isProfane(location)) {
+      return NextResponse.json(
+        { error: "Event location contains inappropriate language" },
+        { status: 400 }
+      );
+    }
+
     const userRef = ref(db, `users/${creatorId}`);
     const userSnapshot = await get(userRef);
     if (!userSnapshot.exists()) {

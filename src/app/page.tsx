@@ -10,6 +10,7 @@ import sortEvents from "@/utils/sortEvents";
 import isPastEvent from "@/utils/pastEvent";
 import { useUserAuth } from "@/contexts/userAuthContext";
 import { eventImages } from "@/utils/eventImages";
+import { locations } from "@/utils/locations";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("admin");
@@ -27,6 +28,8 @@ export default function Home() {
     imageUrl: null,
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [customLocation, setCustomLocation] = useState("");
+  const [showCustomLocation, setShowCustomLocation] = useState(false);
   const router = useRouter();
   const { user, isAdmin } = useUserAuth();
 
@@ -676,19 +679,42 @@ export default function Home() {
                       <label className="block text-sm font-medium text-black mb-2">
                         Location
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.location}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setFormData({
                             ...formData,
-                            location: e.target.value,
-                          })
-                        }
-                        placeholder="e.g., Stetson East Lounge"
+                            location: value,
+                          });
+                          setShowCustomLocation(value === "Other (Specify)");
+                        }}
                         className="w-full px-4 py-2 rounded-lg border-2 border-black bg-white focus:outline-none focus:border-[#D41B2C] text-black"
                         required
-                      />
+                      >
+                        <option value="">Select a location</option>
+                        {locations.map((location) => (
+                          <option key={location} value={location}>
+                            {location}
+                          </option>
+                        ))}
+                      </select>
+                      {showCustomLocation && (
+                        <input
+                          type="text"
+                          value={customLocation}
+                          onChange={(e) => {
+                            setCustomLocation(e.target.value);
+                            setFormData({
+                              ...formData,
+                              location: e.target.value,
+                            });
+                          }}
+                          placeholder="Enter custom location"
+                          className="w-full px-4 py-2 mt-2 rounded-lg border-2 border-black bg-white focus:outline-none focus:border-[#D41B2C] text-black"
+                          required
+                        />
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-black mb-2">
