@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { db } from "../../../../../../firebaseConfig";
 import { get, ref, remove } from "firebase/database";
 import Event from "@/types/event";
