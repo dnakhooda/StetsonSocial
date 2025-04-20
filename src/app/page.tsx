@@ -74,6 +74,20 @@ export default function Home() {
       return;
     }
 
+    if (!isAdmin) {
+      const userFutureEvents = [...adminEvents, ...studentEvents].filter(
+        (event) =>
+          event.creatorId === user.uid && !isPastEvent(event.date, event.time)
+      );
+
+      if (userFutureEvents.length >= 3) {
+        alert(
+          "You have reached the maximum limit of 3 future events. Please wait until some of your events have passed before creating new ones."
+        );
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
       const eventData = {
@@ -86,7 +100,6 @@ export default function Home() {
         date: formData.date,
         time: formData.time,
         attendees: {},
-        isAdminEvent: isAdmin,
       };
 
       const response = await fetch("/api/events", {

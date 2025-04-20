@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "../../../../firebaseConfig";
 import { get, push, ref, set } from "firebase/database";
 import Event from "@/types/event";
+import isPastEvent from "@/utils/pastEvent";
 
 export async function GET() {
   try {
@@ -39,8 +40,37 @@ export async function POST(request: Request) {
       time,
       location,
       imageUrl,
-      isAdminEvent,
     } = await request.json();
+
+    const userRef = ref(db, `users/${creatorId}`);
+    const userSnapshot = await get(userRef);
+    if (!userSnapshot.exists()) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const userData = userSnapshot.val();
+    const isAdmin = userData.isAdmin;
+
+    if (!isAdmin) {
+      const eventsRef = ref(db, "events");
+      const eventsSnapshot = await get(eventsRef);
+
+      if (eventsSnapshot.exists()) {
+        const events = eventsSnapshot.val() as Record<string, Event>;
+        const userFutureEvents = Object.values(events).filter(
+          (event) =>
+            event.creatorId === creatorId &&
+            !isPastEvent(event.date, event.time)
+        );
+
+        if (userFutureEvents.length >= 3) {
+          return NextResponse.json(
+            { error: "You have reached the maximum limit of 3 future events" },
+            { status: 403 }
+          );
+        }
+      }
+    }
 
     const eventsRef = ref(db, "events");
     const eventsSnapshot = await get(eventsRef);
@@ -71,7 +101,7 @@ export async function POST(request: Request) {
       date,
       time,
       attendees,
-      isAdminEvent: isAdminEvent || false,
+      isAdminEvent: isAdmin,
     });
 
     return NextResponse.json(
