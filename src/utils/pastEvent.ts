@@ -1,5 +1,13 @@
 export default function isPastEvent(date: string, time: string) {
   const now = new Date();
-  const eventDateTime = new Date(`${date}T${time}`);
-  return eventDateTime < now;
+  const eventDate = new Date(date);
+
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const eventDay = new Date(
+    eventDate.getFullYear(),
+    eventDate.getMonth(),
+    eventDate.getDate()
+  );
+
+  return eventDay < today;
 }
