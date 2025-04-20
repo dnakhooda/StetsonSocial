@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { db } from "../../../../../../firebaseConfig";
 import { get, ref, update } from "firebase/database";
 import Event from "@/types/event";
+import { Filter } from "bad-words";
+
+const filter = new Filter();
 
 export async function PUT(request: Request) {
   try {
@@ -17,6 +20,20 @@ export async function PUT(request: Request) {
     if (!userId) {
       return NextResponse.json(
         { error: "User ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (filter.isProfane(title)) {
+      return NextResponse.json(
+        { error: "Event title contains inappropriate language" },
+        { status: 400 }
+      );
+    }
+
+    if (filter.isProfane(description)) {
+      return NextResponse.json(
+        { error: "Event description contains inappropriate language" },
         { status: 400 }
       );
     }

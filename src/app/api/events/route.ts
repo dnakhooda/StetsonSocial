@@ -3,6 +3,9 @@ import { db } from "../../../../firebaseConfig";
 import { get, push, ref, set } from "firebase/database";
 import Event from "@/types/event";
 import isPastEvent from "@/utils/pastEvent";
+import { Filter } from "bad-words";
+
+const filter = new Filter();
 
 export async function GET() {
   try {
@@ -41,6 +44,20 @@ export async function POST(request: Request) {
       location,
       imageUrl,
     } = await request.json();
+
+    if (filter.isProfane(title)) {
+      return NextResponse.json(
+        { error: "Event title contains inappropriate language" },
+        { status: 400 }
+      );
+    }
+
+    if (filter.isProfane(description)) {
+      return NextResponse.json(
+        { error: "Event description contains inappropriate language" },
+        { status: 400 }
+      );
+    }
 
     const userRef = ref(db, `users/${creatorId}`);
     const userSnapshot = await get(userRef);
