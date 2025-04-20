@@ -77,7 +77,6 @@ export default function AdminUsersPage() {
         throw new Error("Failed to update user");
       }
 
-      // Refresh users list
       fetchUsers();
     } catch (error) {
       console.error("Error updating user:", error);
@@ -85,7 +84,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  const filteredUsers = Object.entries(users).filter(([_, userData]) => {
+  const filteredUsers = Object.entries(users).filter(([, userData]) => {
     const searchLower = searchQuery.toLowerCase();
     return (
       userData.displayName?.toLowerCase().includes(searchLower) ||
@@ -94,7 +93,7 @@ export default function AdminUsersPage() {
   });
 
   if (!user || !isAdmin) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   return (
