@@ -213,6 +213,11 @@ export default function EventPage() {
   const handleDeleteEvent = async () => {
     if (!canManageEvent) return;
 
+    if (!isAdmin && eventData && isPastEvent(eventData.date, eventData.time)) {
+      alert("Only administrators can delete past events.");
+      return;
+    }
+
     if (
       !confirm(
         "Are you sure you want to delete this event? This action cannot be undone."

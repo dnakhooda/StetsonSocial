@@ -8,9 +8,12 @@ import Event from "@/types/event";
 import Footer from "@/components/footer/footer";
 import isPastEvent from "@/utils/pastEvent";
 import sortEvents from "@/utils/sortEvents";
+import { useUserAuth } from "@/contexts/userAuthContext";
+
 export default function PastEvents() {
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const router = useRouter();
+  const { user, isAdmin } = useUserAuth();
 
   useEffect(() => {
     fetchEvents();
@@ -31,6 +34,44 @@ export default function PastEvents() {
       setPastEvents(pastEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string, creatorId: string) => {
+    if (!isAdmin && user?.uid !== creatorId) return;
+
+    if (
+      !confirm(
+        "Are you sure you want to delete this event? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/events/${encodeURIComponent(eventId)}/delete?userId=${
+          user?.uid
+        }&isAdmin=${isAdmin}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete event");
+      }
+
+      fetchEvents();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error deleting event:", error.message);
+        alert("Failed to delete event: " + error.message);
+      } else {
+        console.error("Error deleting event:", error);
+        alert("Failed to delete event: " + String(error));
+      }
     }
   };
 
@@ -58,50 +99,61 @@ export default function PastEvents() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pastEvents.map((event) => (
               <div
-                  key={event.id}
-                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
-                >
-                  <div className="relative h-48">
-                    {event.imageUrl ? (
-                      <Image
-                        src={event.imageUrl}
-                        alt={event.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        priority
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-[#D41B2C]"></div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-4 left-4">
-                      <h3 className="text-xl font-semibold text-white">
-                        {event.title}
-                      </h3>
-                      <p className="text-white">
-                        {new Date(event.date).toLocaleDateString()} at{" "}
-                        {new Date(
-                          `2000-01-01T${event.time}`
-                        ).toLocaleTimeString([], {
+                key={event.id}
+                className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
+              >
+                <div className="relative h-48">
+                  {event.imageUrl ? (
+                    <Image
+                      src={event.imageUrl}
+                      alt={event.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      priority
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#D41B2C]"></div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-4 left-4">
+                    <h3 className="text-xl font-semibold text-white">
+                      {event.title}
+                    </h3>
+                    <p className="text-white">
+                      {new Date(event.date).toLocaleDateString()} at{" "}
+                      {new Date(`2000-01-01T${event.time}`).toLocaleTimeString(
+                        [],
+                        {
                           hour: "numeric",
                           minute: "2-digit",
                           hour12: true,
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <p className="text-gray-600 mb-2">
-                      Location: {event.location}
-                    </p>
-                    <p className="text-gray-700 mb-4">{event.description}</p>
-                    <p className="text-gray-600 mb-4">
-                      Created by: {event.creatorName}
+                        }
+                      )}
                     </p>
                   </div>
                 </div>
-              ))}
+                <div className="p-6">
+                  <p className="text-gray-600 mb-2">
+                    Location: {event.location}
+                  </p>
+                  <p className="text-gray-700 mb-4">{event.description}</p>
+                  <p className="text-gray-600 mb-4">
+                    Created by: {event.creatorName}
+                  </p>
+                  {(isAdmin || user?.uid === event.creatorId) && (
+                    <button
+                      onClick={() =>
+                        handleDeleteEvent(event.id, event.creatorId)
+                      }
+                      className="w-full py-2 px-4 rounded-lg text-white font-medium text-sm transition bg-red-600 hover:bg-red-700"
+                    >
+                      Delete Event
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </main>

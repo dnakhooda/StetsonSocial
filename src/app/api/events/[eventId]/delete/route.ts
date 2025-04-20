@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "../../../../../../firebaseConfig";
 import { get, ref, remove } from "firebase/database";
 import Event from "@/types/event";
+import isPastEvent from "@/utils/pastEvent";
 
 export async function DELETE(request: Request) {
   try {
@@ -28,6 +29,19 @@ export async function DELETE(request: Request) {
     }
 
     const event = snapshot.val() as Event;
+
+    if (
+      !isAdmin &&
+      event.creatorId !== userId &&
+      isPastEvent(event.date, event.time)
+    ) {
+      return NextResponse.json(
+        {
+          error: "Only administrators or event creators can delete past events",
+        },
+        { status: 403 }
+      );
+    }
 
     if (event.creatorId !== userId && !isAdmin) {
       return NextResponse.json(

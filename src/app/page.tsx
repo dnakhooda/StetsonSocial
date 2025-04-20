@@ -154,6 +154,44 @@ export default function Home() {
     router.push(`/events/${eventTitle}`);
   };
 
+  const handleDeleteEvent = async (eventId: string, creatorId: string) => {
+    if (!isAdmin && user?.uid !== creatorId) return;
+
+    if (
+      !confirm(
+        "Are you sure you want to delete this event? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/events/${encodeURIComponent(eventId)}/delete?userId=${
+          user?.uid
+        }&isAdmin=${isAdmin}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete event");
+      }
+
+      fetchEvents();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error deleting event:", error.message);
+        alert("Failed to delete event: " + error.message);
+      } else {
+        console.error("Error deleting event:", error);
+        alert("Failed to delete event: " + String(error));
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-black relative overflow-hidden flex flex-col">
       <style jsx>{`
@@ -543,6 +581,16 @@ export default function Home() {
                               <p className="text-gray-600 mb-4">
                                 Created by: {event.creatorName}
                               </p>
+                              {(isAdmin || user?.uid === event.creatorId) && (
+                                <button
+                                  onClick={() =>
+                                    handleDeleteEvent(event.id, event.creatorId)
+                                  }
+                                  className="w-full py-2 px-4 rounded-lg text-white font-medium text-sm transition bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete Event
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -618,6 +666,16 @@ export default function Home() {
                               <p className="text-gray-600 mb-4">
                                 Created by: {event.creatorName}
                               </p>
+                              {(isAdmin || user?.uid === event.creatorId) && (
+                                <button
+                                  onClick={() =>
+                                    handleDeleteEvent(event.id, event.creatorId)
+                                  }
+                                  className="w-full py-2 px-4 rounded-lg text-white font-medium text-sm transition bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete Event
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
