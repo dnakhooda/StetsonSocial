@@ -213,7 +213,7 @@ export default function EventPage() {
   const handleDeleteEvent = async () => {
     if (!canManageEvent) return;
 
-    if (!isAdmin && eventData && isPastEvent(eventData.date, eventData.time)) {
+    if (!isAdmin && eventData && isPastEvent(eventData.date)) {
       alert("Only administrators can delete past events.");
       return;
     }
@@ -500,17 +500,17 @@ export default function EventPage() {
                 <button
                   onClick={handleSignUp}
                   disabled={
-                    isSignedUp || isPastEvent(eventData.date, eventData.time)
+                    isSignedUp || isPastEvent(eventData.date)
                   }
                   className={`w-full py-2 px-4 rounded-lg text-white font-medium text-sm transition bg-green-600 hover:bg-green-700 mb-4 ${
-                    isSignedUp || isPastEvent(eventData.date, eventData.time)
+                    isSignedUp || isPastEvent(eventData.date)
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-[#D41B2C] hover:bg-[#B31824]"
                   }`}
                 >
                   {isSignedUp
                     ? "Already Signed Up"
-                    : isPastEvent(eventData.date, eventData.time)
+                    : isPastEvent(eventData.date)
                     ? "Event Has Passed"
                     : "Sign Up for Event"}
                 </button>

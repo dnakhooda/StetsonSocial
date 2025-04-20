@@ -93,7 +93,7 @@ export async function POST(request: Request) {
         const userFutureEvents = Object.values(events).filter(
           (event) =>
             event.creatorId === creatorId &&
-            !isPastEvent(event.date, event.time)
+            !isPastEvent(event.date)
         );
 
         if (userFutureEvents.length >= 3) {

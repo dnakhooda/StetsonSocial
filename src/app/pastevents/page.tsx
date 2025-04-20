@@ -28,7 +28,7 @@ export default function PastEvents() {
       const data = await response.json();
       const sortedEvents = sortEvents(data);
       const pastEvents = sortedEvents.filter((event) =>
-        isPastEvent(event.date, event.time)
+        isPastEvent(event.date)
       );
 
       setPastEvents(pastEvents);

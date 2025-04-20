@@ -47,16 +47,16 @@ export default function Home() {
       const sortedEvents = sortEvents(data);
 
       const adminEvents = sortedEvents.filter(
-        (event) => !isPastEvent(event.date, event.time) && event.isAdminEvent
+        (event) => !isPastEvent(event.date) && event.isAdminEvent
       );
       const studentEvents = sortedEvents.filter(
-        (event) => !isPastEvent(event.date, event.time) && !event.isAdminEvent
+        (event) => !isPastEvent(event.date) && !event.isAdminEvent
       );
       const pastAdminEvents = sortedEvents.filter(
-        (event) => isPastEvent(event.date, event.time) && event.isAdminEvent
+        (event) => isPastEvent(event.date) && event.isAdminEvent
       );
       const pastStudentEvents = sortedEvents.filter(
-        (event) => isPastEvent(event.date, event.time) && !event.isAdminEvent
+        (event) => isPastEvent(event.date) && !event.isAdminEvent
       );
 
       setAdminEvents(adminEvents);
@@ -87,13 +87,12 @@ export default function Home() {
 
     if (!isAdmin) {
       const userFutureEvents = [...adminEvents, ...studentEvents].filter(
-        (event) =>
-          event.creatorId === user.uid && !isPastEvent(event.date, event.time)
+        (event) => event.creatorId === user.uid && !isPastEvent(event.date)
       );
 
       if (userFutureEvents.length >= 3) {
         alert(
-          "You have reached the maximum limit of 3 future events. Please wait until some of your events have passed before creating new ones."
+          "You have reached the maximum limit of 3 future e vents. Please wait until some of your events have passed before creating new ones."
         );
         return;
       }

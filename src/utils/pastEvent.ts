@@ -1,4 +1,4 @@
-export default function isPastEvent(date: string, time: string) {
+export default function isPastEvent(date: string) {
   const now = new Date();
   const eventDate = new Date(date);
 

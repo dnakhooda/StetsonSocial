@@ -33,7 +33,7 @@ export async function DELETE(request: Request) {
     if (
       !isAdmin &&
       event.creatorId !== userId &&
-      isPastEvent(event.date, event.time)
+      isPastEvent(event.date)
     ) {
       return NextResponse.json(
         {
