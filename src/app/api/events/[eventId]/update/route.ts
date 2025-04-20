@@ -24,6 +24,15 @@ export async function PUT(request: Request) {
       );
     }
 
+    const eventDateTime = new Date(`${date}T${time}`);
+    const now = new Date();
+    if (eventDateTime < now) {
+      return NextResponse.json(
+        { error: "Cannot update events to a past date and time" },
+        { status: 400 }
+      );
+    }
+
     if (filter.isProfane(title)) {
       return NextResponse.json(
         { error: "Event title contains inappropriate language" },

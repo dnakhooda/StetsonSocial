@@ -76,6 +76,15 @@ export default function Home() {
       return;
     }
 
+    const eventDateTime = new Date(`${formData.date}T${formData.time}`);
+    const now = new Date();
+    if (eventDateTime < now) {
+      alert(
+        "Cannot create events in the past. Please select a future date and time."
+      );
+      return;
+    }
+
     if (!isAdmin) {
       const userFutureEvents = [...adminEvents, ...studentEvents].filter(
         (event) =>
