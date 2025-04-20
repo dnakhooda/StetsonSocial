@@ -3,13 +3,13 @@ import { db } from "../../../../../../firebaseConfig";
 import { get, ref, update } from "firebase/database";
 import Event from "@/types/event";
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { eventId: string } }
-) {
+export async function PUT(request: Request) {
   try {
-    const eventId = params.eventId;
-    const { searchParams } = new URL(request.url);
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split("/");
+    const eventId = pathSegments[pathSegments.indexOf("events") + 1];
+
+    const { searchParams } = url;
     const userId = searchParams.get("userId");
     const isAdmin = searchParams.get("isAdmin") === "true";
     const { title, description, date, time, location } = await request.json();

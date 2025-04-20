@@ -3,13 +3,12 @@ import { get, ref, update } from "firebase/database";
 import Event from "@/types/event";
 import { db } from "../../../../../../firebaseConfig";
 
-export async function POST(
-  request: Request,
-  { params }: { params: { eventId: string } }
-) {
+export async function POST(request: Request) {
   try {
     const { userId } = await request.json();
-    const eventId = params.eventId;
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split("/");
+    const eventId = pathSegments[pathSegments.indexOf("events") + 1];
 
     const eventRef = ref(db, `events/${eventId}`);
     const snapshot = await get(eventRef);

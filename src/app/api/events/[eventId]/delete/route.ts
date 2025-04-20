@@ -3,13 +3,13 @@ import { db } from "../../../../../../firebaseConfig";
 import { get, ref, remove } from "firebase/database";
 import Event from "@/types/event";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { eventId: string } }
-) {
+export async function DELETE(request: Request) {
   try {
-    const eventId = params.eventId;
-    const { searchParams } = new URL(request.url);
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split("/");
+    const eventId = pathSegments[pathSegments.indexOf("events") + 1];
+
+    const { searchParams } = url;
     const userId = searchParams.get("userId");
     const isAdmin = searchParams.get("isAdmin") === "true";
 
