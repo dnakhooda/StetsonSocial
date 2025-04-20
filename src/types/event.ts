@@ -12,6 +12,7 @@ interface Event {
   time: string;
 
   attendees: string[];
+  isAdminEvent: boolean;
 }
 
 export default Event;

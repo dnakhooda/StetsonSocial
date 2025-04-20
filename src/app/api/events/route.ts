@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       time,
       location,
       imageUrl,
+      isAdminEvent,
     } = await request.json();
 
     const eventsRef = ref(db, "events");
@@ -63,15 +64,14 @@ export async function POST(request: Request) {
     await set(newEventRef, {
       creatorId,
       creatorName,
-
       title,
       description,
       location,
       imageUrl,
       date,
       time,
-
       attendees,
+      isAdminEvent: isAdminEvent || false,
     });
 
     return NextResponse.json(

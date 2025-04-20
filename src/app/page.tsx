@@ -12,9 +12,11 @@ import { useUserAuth } from "@/contexts/userAuthContext";
 import { eventImages } from "@/utils/eventImages";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("featured");
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [pastEvents, setPastEvents] = useState<Event[]>([]);
+  const [activeTab, setActiveTab] = useState("admin");
+  const [adminEvents, setAdminEvents] = useState<Event[]>([]);
+  const [studentEvents, setStudentEvents] = useState<Event[]>([]);
+  const [pastAdminEvents, setPastAdminEvents] = useState<Event[]>([]);
+  const [pastStudentEvents, setPastStudentEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -26,7 +28,7 @@ export default function Home() {
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const router = useRouter();
-  const { user } = useUserAuth();
+  const { user, isAdmin } = useUserAuth();
 
   useEffect(() => {
     fetchEvents();
@@ -40,15 +42,25 @@ export default function Home() {
 
       const data = await response.json();
       const sortedEvents = sortEvents(data);
-      const upcomingEvents = sortedEvents.filter(
-        (event) => !isPastEvent(event.date, event.time)
+
+      const now = new Date();
+      const adminEvents = sortedEvents.filter(
+        (event) => !isPastEvent(event.date, event.time) && event.isAdminEvent
       );
-      const pastEvents = sortedEvents.filter((event) =>
-        isPastEvent(event.date, event.time)
+      const studentEvents = sortedEvents.filter(
+        (event) => !isPastEvent(event.date, event.time) && !event.isAdminEvent
+      );
+      const pastAdminEvents = sortedEvents.filter(
+        (event) => isPastEvent(event.date, event.time) && event.isAdminEvent
+      );
+      const pastStudentEvents = sortedEvents.filter(
+        (event) => isPastEvent(event.date, event.time) && !event.isAdminEvent
       );
 
-      setUpcomingEvents(upcomingEvents);
-      setPastEvents(pastEvents);
+      setAdminEvents(adminEvents);
+      setStudentEvents(studentEvents);
+      setPastAdminEvents(pastAdminEvents);
+      setPastStudentEvents(pastStudentEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -74,6 +86,7 @@ export default function Home() {
         date: formData.date,
         time: formData.time,
         attendees: {},
+        isAdminEvent: isAdmin,
       };
 
       const response = await fetch("/api/events", {
@@ -100,7 +113,7 @@ export default function Home() {
         imageUrl: null,
       });
       fetchEvents();
-      setActiveTab("featured");
+      setActiveTab("admin");
     } catch (error: unknown) {
       console.error("Error creating event:", error);
       if (error instanceof Error) {
@@ -223,37 +236,61 @@ export default function Home() {
             </div>
             <div className="relative bg-white rounded-lg p-6">
               <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold text-black">
-                  {activeTab === "featured"
-                    ? "Featured Events"
-                    : activeTab === "past"
-                    ? "Past Events"
+                <h2 className="text-3xl font-bold text-black mr-4">
+                  {activeTab === "admin"
+                    ? "Admin Events"
+                    : activeTab === "student"
+                    ? "Student Events"
+                    : activeTab === "pastAdmin"
+                    ? "Past Admin Events"
+                    : activeTab === "pastStudent"
+                    ? "Past Student Events"
                     : "Event Creator"}
                 </h2>
                 <div className="space-x-4">
                   <button
-                    onClick={() => setActiveTab("featured")}
-                    className={`px-6 py-2 rounded-lg transition border-2 ${
-                      activeTab === "featured"
+                    onClick={() => setActiveTab("admin")}
+                    className={`px-4 py-2 rounded-lg transition border-2 ${
+                      activeTab === "admin"
                         ? "bg-[#D41B2C] text-white"
                         : "text-black hover:bg-[#D41B2C] hover:text-white"
                     } border-[#D41B2C] font-['Lexend']`}
                   >
-                    Events
+                    Admin Events
                   </button>
                   <button
-                    onClick={() => setActiveTab("past")}
-                    className={`px-6 py-2 rounded-lg transition border-2 ${
-                      activeTab === "past"
+                    onClick={() => setActiveTab("student")}
+                    className={`px-4 py-2 rounded-lg transition border-2 ${
+                      activeTab === "student"
                         ? "bg-[#D41B2C] text-white"
                         : "text-black hover:bg-[#D41B2C] hover:text-white"
                     } border-[#D41B2C] font-['Lexend']`}
                   >
-                    Past Events
+                    Student Events
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("pastAdmin")}
+                    className={`px-4 py-2 rounded-lg transition border-2 ${
+                      activeTab === "pastAdmin"
+                        ? "bg-[#D41B2C] text-white"
+                        : "text-black hover:bg-[#D41B2C] hover:text-white"
+                    } border-[#D41B2C] font-['Lexend']`}
+                  >
+                    Past Admin
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("pastStudent")}
+                    className={`px-4 py-2 rounded-lg transition border-2 ${
+                      activeTab === "pastStudent"
+                        ? "bg-[#D41B2C] text-white"
+                        : "text-black hover:bg-[#D41B2C] hover:text-white"
+                    } border-[#D41B2C] font-['Lexend']`}
+                  >
+                    Past Student
                   </button>
                   <button
                     onClick={() => setActiveTab("create")}
-                    className={`px-6 py-2 rounded-lg transition border-2 ${
+                    className={`px-4 py-2 rounded-lg transition border-2 ${
                       activeTab === "create"
                         ? "bg-[#D41B2C] text-white"
                         : "text-black hover:bg-[#D41B2C] hover:text-white"
@@ -264,18 +301,18 @@ export default function Home() {
                 </div>
               </div>
 
-              {activeTab === "featured" && (
+              {activeTab === "admin" && (
                 <div>
-                  {upcomingEvents.length === 0 ? (
+                  {adminEvents.length === 0 ? (
                     <div className="text-center text-black">
                       <p className="text-lg font-semibold font-['Lexend']">
-                        No upcoming events to display
+                        No admin events to display
                       </p>
                     </div>
                   ) : (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {upcomingEvents.slice(0, 3).map((event) => (
+                        {adminEvents.slice(0, 3).map((event) => (
                           <div
                             key={event.id}
                             className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
@@ -330,13 +367,13 @@ export default function Home() {
                           </div>
                         ))}
                       </div>
-                      {upcomingEvents.length > 3 && (
+                      {adminEvents.length > 3 && (
                         <div className="text-center mt-8">
                           <button
-                            onClick={() => router.push("/upcomingevents")}
+                            onClick={() => router.push("/admin-events")}
                             className="bg-[#D41B2C] hover:bg-[#B31824] text-white font-bold py-3 px-8 rounded-full transition transform hover:scale-105"
                           >
-                            See More Events
+                            See More Admin Events
                           </button>
                         </div>
                       )}
@@ -345,18 +382,99 @@ export default function Home() {
                 </div>
               )}
 
-              {activeTab === "past" && (
+              {activeTab === "student" && (
                 <div>
-                  {pastEvents.length === 0 ? (
+                  {studentEvents.length === 0 ? (
                     <div className="text-center text-black">
                       <p className="text-lg font-semibold font-['Lexend']">
-                        No past events to display
+                        No student events to display
                       </p>
                     </div>
                   ) : (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {pastEvents.slice(0, 3).map((event) => (
+                        {studentEvents.slice(0, 3).map((event) => (
+                          <div
+                            key={event.id}
+                            className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
+                          >
+                            <div className="relative h-48">
+                              {event.imageUrl ? (
+                                <Image
+                                  src={event.imageUrl}
+                                  alt={event.title}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                  priority
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-[#D41B2C]"></div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                              <div className="absolute bottom-4 left-4">
+                                <h3 className="text-xl font-semibold text-white">
+                                  {event.title}
+                                </h3>
+                                <p className="text-white">
+                                  {new Date(event.date).toLocaleDateString()} at{" "}
+                                  {new Date(
+                                    `2000-01-01T${event.time}`
+                                  ).toLocaleTimeString([], {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-6">
+                              <p className="text-gray-600 mb-2">
+                                Location: {event.location}
+                              </p>
+                              <p className="text-gray-700 mb-4">
+                                {event.description}
+                              </p>
+                              <p className="text-gray-600 mb-4">
+                                Created by: {event.creatorName}
+                              </p>
+                              <button
+                                onClick={() => handleJoinEvent(event.title)}
+                                className="w-full bg-[#D41B2C] hover:bg-[#B31824] text-white font-semibold py-2 px-4 rounded-lg transition"
+                              >
+                                Join Event
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {studentEvents.length > 3 && (
+                        <div className="text-center mt-8">
+                          <button
+                            onClick={() => router.push("/student-events")}
+                            className="bg-[#D41B2C] hover:bg-[#B31824] text-white font-bold py-3 px-8 rounded-full transition transform hover:scale-105"
+                          >
+                            See More Student Events
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "pastAdmin" && (
+                <div>
+                  {pastAdminEvents.length === 0 ? (
+                    <div className="text-center text-black">
+                      <p className="text-lg font-semibold font-['Lexend']">
+                        No past admin events to display
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {pastAdminEvents.slice(0, 3).map((event) => (
                           <div
                             key={event.id}
                             className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
@@ -405,13 +523,88 @@ export default function Home() {
                           </div>
                         ))}
                       </div>
-                      {pastEvents.length > 3 && (
+                      {pastAdminEvents.length > 3 && (
                         <div className="text-center mt-8">
                           <button
-                            onClick={() => router.push("/pastevents")}
+                            onClick={() => router.push("/past-admin-events")}
                             className="bg-[#D41B2C] hover:bg-[#B31824] text-white font-bold py-3 px-8 rounded-full transition transform hover:scale-105"
                           >
-                            See All Past Events
+                            See All Past Admin Events
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "pastStudent" && (
+                <div>
+                  {pastStudentEvents.length === 0 ? (
+                    <div className="text-center text-black">
+                      <p className="text-lg font-semibold font-['Lexend']">
+                        No past student events to display
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {pastStudentEvents.slice(0, 3).map((event) => (
+                          <div
+                            key={event.id}
+                            className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
+                          >
+                            <div className="relative h-48">
+                              {event.imageUrl ? (
+                                <Image
+                                  src={event.imageUrl}
+                                  alt={event.title}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                  priority
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-[#D41B2C]"></div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                              <div className="absolute bottom-4 left-4">
+                                <h3 className="text-xl font-semibold text-white">
+                                  {event.title}
+                                </h3>
+                                <p className="text-white">
+                                  {new Date(event.date).toLocaleDateString()} at{" "}
+                                  {new Date(
+                                    `2000-01-01T${event.time}`
+                                  ).toLocaleTimeString([], {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-6">
+                              <p className="text-gray-600 mb-2">
+                                Location: {event.location}
+                              </p>
+                              <p className="text-gray-700 mb-4">
+                                {event.description}
+                              </p>
+                              <p className="text-gray-600 mb-4">
+                                Created by: {event.creatorName}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {pastStudentEvents.length > 3 && (
+                        <div className="text-center mt-8">
+                          <button
+                            onClick={() => router.push("/past-student-events")}
+                            className="bg-[#D41B2C] hover:bg-[#B31824] text-white font-bold py-3 px-8 rounded-full transition transform hover:scale-105"
+                          >
+                            See All Past Student Events
                           </button>
                         </div>
                       )}
