@@ -32,7 +32,7 @@ export default function Navigation() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <button
-            className="flex items-center space-x-6"
+            className="flex items-center space-x-6 cursor-pointer"
             onClick={() => router.push("/")}
           >
             <div className="w-12 h-12 bg-[#D41B2C] flex items-center justify-center">
@@ -107,7 +107,70 @@ export default function Navigation() {
                     Admin
                   </Link>
                 )}
-                <span className="text-white text-lg font-medium font-['Lexend'] flex items-center justify-center">
+                <span className="hidden md:inline text-white text-lg font-medium font-['Lexend'] px-4 py-2">
+                  Welcome, {user.displayName}!
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="bg-white hover:bg-[#D41B2C] text-black hover:text-white font-semibold py-2 px-4 rounded-lg transition w-full md:w-auto"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleClick}
+                  className="bg-white hover:bg-[#D41B2C] text-black hover:text-white font-semibold py-2 px-4 rounded-lg transition w-full md:w-auto"
+                >
+                  Sign In
+                </button>
+              </>
+            )}
+          </nav>
+        </div>
+
+        <div
+          className={`md:hidden transition-all duration-300 ease-in-out ${
+            isMenuOpen
+              ? "opacity-100 max-h-[500px] mt-4 pb-4"
+              : "opacity-0 max-h-0 overflow-hidden mt-0 pb-0"
+          }`}
+        >
+          <nav className="flex flex-col space-y-4 items-end">
+            <Link
+              href="/"
+              className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              href="/about"
+              className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              About
+            </Link>
+            <Link
+              href="/contact"
+              className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Contact
+            </Link>
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Link
+                    href="/admin/users"
+                    className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Admin
+                  </Link>
+                )}
+                <span className="hidden md:inline text-white text-lg font-medium font-['Lexend'] px-4 py-2">
                   Welcome, {user.displayName}!
                 </span>
                 <button
@@ -129,66 +192,6 @@ export default function Navigation() {
             )}
           </nav>
         </div>
-
-        {/* Mobile navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4">
-            <nav className="flex flex-col space-y-4">
-              <Link
-                href="/"
-                className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                href="/about"
-                className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                About
-              </Link>
-              <Link
-                href="/contact"
-                className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Contact
-              </Link>
-              {user ? (
-                <>
-                  {isAdmin && (
-                    <Link
-                      href="/admin/users"
-                      className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Admin
-                    </Link>
-                  )}
-                  <span className="text-white text-lg font-medium font-['Lexend'] px-4 py-2">
-                    Welcome, {user.displayName}!
-                  </span>
-                  <button
-                    onClick={handleSignOut}
-                    className="bg-white hover:bg-[#D41B2C] text-black hover:text-white font-semibold py-2 px-4 rounded-lg transition w-full max-w-xs mx-auto"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleClick}
-                    className="bg-white hover:bg-[#D41B2C] text-black hover:text-white font-semibold py-2 px-4 rounded-lg transition w-full max-w-xs mx-auto"
-                  >
-                    Sign In
-                  </button>
-                </>
-              )}
-            </nav>
-          </div>
-        )}
       </div>
     </header>
   );
