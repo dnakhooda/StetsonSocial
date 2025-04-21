@@ -13,7 +13,6 @@ import { useUserAuth } from "@/contexts/userAuthContext";
 export default function PastAdminEventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const router = useRouter();
   const { user, isAdmin } = useUserAuth();
 
   useEffect(() => {
