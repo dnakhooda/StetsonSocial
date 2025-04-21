@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import Navigation from "@/components/navigation/navigation";
 import Event from "@/types/event";
 import Footer from "@/components/footer/footer";
