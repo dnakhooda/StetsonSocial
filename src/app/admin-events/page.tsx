@@ -25,7 +25,7 @@ export default function AdminEventsPage() {
         throw new Error("Failed to fetch events");
       }
       const data = await response.json();
-      
+
       const adminEvents = data
         .filter(
           (event: Event) => event.isAdminEvent && !isPastEvent(event.date)

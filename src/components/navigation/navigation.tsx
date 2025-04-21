@@ -1,10 +1,12 @@
 import { useUserAuth } from "@/contexts/userAuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Navigation() {
   const router = useRouter();
   const { user, isAdmin, logout } = useUserAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -12,16 +14,22 @@ export default function Navigation() {
       return;
     }
     router.push("/signin");
+    setIsMenuOpen(false);
   };
 
   const handleSignOut = async () => {
     await logout();
     router.push(`/`);
+    setIsMenuOpen(false);
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   return (
-    <header className="h-20 bg-gradient-to-r from-black via-black to-[#D41B2C] shadow-lg relative z-10">
-      <div className="container mx-auto px-0 py-4">
+    <header className="h-auto min-h-20 bg-gradient-to-r from-black via-black to-[#D41B2C] shadow-lg relative z-10">
+      <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <button
             className="flex items-center space-x-6"
@@ -37,7 +45,40 @@ export default function Navigation() {
             </div>
             <h1 className="text-3xl font-bold text-white">Stetson Social</h1>
           </button>
-          <nav className="space-x-8">
+
+          <div className="md:hidden">
+            <button
+              onClick={toggleMenu}
+              className="text-white focus:outline-none"
+              aria-label="Toggle menu"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {isMenuOpen ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                )}
+              </svg>
+            </button>
+          </div>
+
+          <nav className="hidden md:flex space-x-8">
             <Link
               href="/"
               className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
@@ -66,7 +107,7 @@ export default function Navigation() {
                     Admin
                   </Link>
                 )}
-                <span className="text-white text-lg font-medium font-['Lexend']">
+                <span className="text-white text-lg font-medium font-['Lexend'] flex items-center justify-center">
                   Welcome, {user.displayName}!
                 </span>
                 <button
@@ -88,6 +129,66 @@ export default function Navigation() {
             )}
           </nav>
         </div>
+
+        {/* Mobile navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden mt-4 pb-4">
+            <nav className="flex flex-col space-y-4">
+              <Link
+                href="/"
+                className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link
+                href="/about"
+                className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </Link>
+              <Link
+                href="/contact"
+                className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Contact
+              </Link>
+              {user ? (
+                <>
+                  {isAdmin && (
+                    <Link
+                      href="/admin/users"
+                      className="text-white hover:text-white hover:font-bold transition-all duration-300 text-lg font-medium tracking-wide px-4 py-2 rounded-lg hover:-translate-y-1.5 hover:scale-107 inline-block font-['Lexend']"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Admin
+                    </Link>
+                  )}
+                  <span className="text-white text-lg font-medium font-['Lexend'] px-4 py-2">
+                    Welcome, {user.displayName}!
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="bg-white hover:bg-[#D41B2C] text-black hover:text-white font-semibold py-2 px-4 rounded-lg transition w-full max-w-xs mx-auto"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleClick}
+                    className="bg-white hover:bg-[#D41B2C] text-black hover:text-white font-semibold py-2 px-4 rounded-lg transition w-full max-w-xs mx-auto"
+                  >
+                    Sign In
+                  </button>
+                </>
+              )}
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

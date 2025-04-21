@@ -123,7 +123,9 @@ export default function AdminUsersPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D41B2C] focus:border-transparent"
                 />
               </div>
-              <div className="bg-white shadow-md rounded-lg overflow-hidden">
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block bg-white shadow-md rounded-lg overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -208,6 +210,75 @@ export default function AdminUsersPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="md:hidden space-y-4">
+                {filteredUsers.map(([uid, userData]) => (
+                  <div
+                    key={uid}
+                    className="bg-white shadow-md rounded-lg p-4 border border-gray-200"
+                  >
+                    <div className="flex items-center mb-4">
+                      <div className="flex-shrink-0 h-12 w-12">
+                        {userData.photoURL ? (
+                          <img
+                            className="h-12 w-12 rounded-full"
+                            src={userData.photoURL}
+                            alt={userData.displayName || "User"}
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-full bg-[#D41B2C] flex items-center justify-center text-white text-lg">
+                            {(userData.displayName || "U")[0]}
+                          </div>
+                        )}
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-base font-medium text-gray-900">
+                          {userData.displayName || "Unknown User"}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {userData.email}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">
+                          Last Login:
+                        </span>
+                        <span className="text-sm text-gray-900">
+                          {new Date(userData.lastLogin).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">Role:</span>
+                        <span
+                          className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                            userData.isAdmin
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {userData.isAdmin ? "Admin" : "User"}
+                        </span>
+                      </div>
+                      <div className="pt-2">
+                        <button
+                          onClick={() =>
+                            handleToggleAdmin(uid, userData.isAdmin)
+                          }
+                          className={`w-full py-2 px-4 rounded-lg text-sm font-medium ${
+                            userData.isAdmin
+                              ? "bg-red-100 text-red-700 hover:bg-red-200"
+                              : "bg-green-100 text-green-700 hover:bg-green-200"
+                          }`}
+                        >
+                          {userData.isAdmin ? "Remove Admin" : "Make Admin"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}

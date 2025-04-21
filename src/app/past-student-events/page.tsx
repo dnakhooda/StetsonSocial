@@ -85,13 +85,13 @@ export default function PastStudentEventsPage() {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
 
-      <div className="py-12 px-4 sm:px-6 lg:px-8">
+      <div className="py-8 px-4 sm:py-12 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
               Past Student Events
             </h1>
-            <p className="text-lg text-gray-600 mb-8">
+            <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
               View past student events that have taken place in Stetson East.
             </p>
           </div>
@@ -108,42 +108,46 @@ export default function PastStudentEventsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {events.map((event) => (
                 <div
                   key={event.id}
                   className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-2 border-[#D41B2C]"
                 >
-                  <div className="relative h-48">
+                  <div className="relative h-40 sm:h-48">
                     {event.imageUrl ? (
                       <Image
                         src={event.imageUrl}
                         alt={event.title}
                         fill
                         className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
                       />
                     ) : (
                       <div className="w-full h-full bg-[#D41B2C] flex items-center justify-center">
-                        <span className="text-white text-2xl">No Image</span>
+                        <span className="text-white text-xl sm:text-2xl">
+                          No Image
+                        </span>
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-4 left-4">
-                      <h3 className="text-xl font-semibold text-white">
+                      <h3 className="text-lg sm:text-xl font-semibold text-white">
                         {event.title}
                       </h3>
-                      <p className="text-white">
+                      <p className="text-sm sm:text-base text-white">
                         {formatDate(event.date)} at {formatTime(event.time)}
                       </p>
                     </div>
                   </div>
-                  <div className="p-6">
-                    <p className="text-gray-600 mb-2">
+                  <div className="p-4 sm:p-6">
+                    <p className="text-sm sm:text-base text-gray-600 mb-2">
                       Location: {event.location}
                     </p>
-                    <p className="text-gray-700 mb-4">{event.description}</p>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4 line-clamp-3">
+                      {event.description}
+                    </p>
+                    <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
                       Created by: {event.creatorName}
                     </p>
                     {(isAdmin || user?.uid === event.creatorId) && (
@@ -151,7 +155,7 @@ export default function PastStudentEventsPage() {
                         onClick={() =>
                           handleDeleteEvent(event.id, event.creatorId)
                         }
-                        className="w-full py-2 px-4 rounded-lg text-white font-medium text-sm transition bg-red-600 hover:bg-red-700"
+                        className="w-full py-2 px-4 rounded-lg text-white font-medium text-sm sm:text-base transition bg-red-600 hover:bg-red-700"
                       >
                         Delete Event
                       </button>

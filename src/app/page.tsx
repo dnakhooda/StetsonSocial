@@ -297,8 +297,8 @@ export default function Home() {
               <div className="bg-white rounded-lg h-full w-full"></div>
             </div>
             <div className="relative bg-white rounded-lg p-6">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold text-black mr-4">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
+                <h2 className="text-3xl font-bold text-black mb-4 md:mb-0 md:mr-4">
                   {activeTab === "admin"
                     ? "Admin Events"
                     : activeTab === "student"
@@ -309,7 +309,7 @@ export default function Home() {
                     ? "Past Student Events"
                     : "Event Creator"}
                 </h2>
-                <div className="space-x-4">
+                <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
                   <button
                     onClick={() => setActiveTab("admin")}
                     className={`px-4 py-2 rounded-lg transition border-2 ${
