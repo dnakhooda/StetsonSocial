@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Nav from "@/components/navigation/navigation";
 import Event from "@/types/event";
+import { formatDate, formatTime } from "@/utils/formatDate";
 
 export default function UpcomingEvents() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -108,14 +109,7 @@ export default function UpcomingEvents() {
                         {event.title}
                       </h3>
                       <p className="text-white">
-                        {new Date(event.date).toLocaleDateString()} at{" "}
-                        {new Date(
-                          `2000-01-01T${event.time}`
-                        ).toLocaleTimeString([], {
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
+                        {formatDate(event.date)} at {formatTime(event.time)}
                       </p>
                     </div>
                   </div>

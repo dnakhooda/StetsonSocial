@@ -7,6 +7,7 @@ import Event from "@/types/event";
 import Footer from "@/components/footer/footer";
 import { useUserAuth } from "@/contexts/userAuthContext";
 import isPastEvent from "@/utils/pastEvent";
+import { formatDate, formatTime } from "@/utils/formatDate";
 
 interface Edit {
   title: string;
@@ -472,17 +473,11 @@ export default function EventPage() {
                   <>
                     <p className="text-gray-600">
                       <span className="font-semibold">Date:</span>{" "}
-                      {new Date(eventData.date).toLocaleDateString()}
+                      {formatDate(eventData.date)}
                     </p>
                     <p className="text-gray-600">
                       <span className="font-semibold">Time:</span>{" "}
-                      {new Date(
-                        `2000-01-01T${eventData.time}`
-                      ).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
+                      {formatTime(eventData.time)}
                     </p>
                     <p className="text-gray-600">
                       <span className="font-semibold">Location:</span>{" "}
@@ -499,9 +494,7 @@ export default function EventPage() {
               {!isEditing && (
                 <button
                   onClick={handleSignUp}
-                  disabled={
-                    isSignedUp || isPastEvent(eventData.date)
-                  }
+                  disabled={isSignedUp || isPastEvent(eventData.date)}
                   className={`w-full py-2 px-4 rounded-lg text-white font-medium text-sm transition bg-green-600 hover:bg-green-700 mb-4 ${
                     isSignedUp || isPastEvent(eventData.date)
                       ? "bg-gray-400 cursor-not-allowed"
@@ -556,8 +549,7 @@ export default function EventPage() {
                         </p>
                       </div>
                     </div>
-                    {(canManageEvent ||
-                      false) /*session?.user?.id === participant.id*/ && (
+                    {(canManageEvent || false) && (
                       <button
                         onClick={() =>
                           handleRemoveParticipant(eventData.attendees[index])

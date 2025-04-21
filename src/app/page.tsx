@@ -11,6 +11,7 @@ import isPastEvent from "@/utils/pastEvent";
 import { useUserAuth } from "@/contexts/userAuthContext";
 import { eventImages } from "@/utils/eventImages";
 import { locations } from "@/utils/locations";
+import { formatDate, formatTime } from "@/utils/formatDate";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("admin");
@@ -76,9 +77,9 @@ export default function Home() {
       return;
     }
 
-    const eventDateTime = new Date(`${formData.date}T${formData.time}`);
-    const now = new Date();
-    if (eventDateTime < now) {
+    console.log(formData.date);
+
+    if (isPastEvent(formData.date)) {
       alert(
         "Cannot create events in the past. Please select a future date and time."
       );
@@ -397,14 +398,8 @@ export default function Home() {
                                   {event.title}
                                 </h3>
                                 <p className="text-white">
-                                  {new Date(event.date).toLocaleDateString()} at{" "}
-                                  {new Date(
-                                    `2000-01-01T${event.time}`
-                                  ).toLocaleTimeString([], {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  })}
+                                  {formatDate(event.date)} at{" "}
+                                  {formatTime(event.time)}
                                 </p>
                               </div>
                             </div>
@@ -478,14 +473,8 @@ export default function Home() {
                                   {event.title}
                                 </h3>
                                 <p className="text-white">
-                                  {new Date(event.date).toLocaleDateString()} at{" "}
-                                  {new Date(
-                                    `2000-01-01T${event.time}`
-                                  ).toLocaleTimeString([], {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  })}
+                                  {formatDate(event.date)} at{" "}
+                                  {formatTime(event.time)}
                                 </p>
                               </div>
                             </div>
@@ -559,14 +548,8 @@ export default function Home() {
                                   {event.title}
                                 </h3>
                                 <p className="text-white">
-                                  {new Date(event.date).toLocaleDateString()} at{" "}
-                                  {new Date(
-                                    `2000-01-01T${event.time}`
-                                  ).toLocaleTimeString([], {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  })}
+                                  {formatDate(event.date)} at{" "}
+                                  {formatTime(event.time)}
                                 </p>
                               </div>
                             </div>
@@ -644,14 +627,8 @@ export default function Home() {
                                   {event.title}
                                 </h3>
                                 <p className="text-white">
-                                  {new Date(event.date).toLocaleDateString()} at{" "}
-                                  {new Date(
-                                    `2000-01-01T${event.time}`
-                                  ).toLocaleTimeString([], {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  })}
+                                  {formatDate(event.date)} at{" "}
+                                  {formatTime(event.time)}
                                 </p>
                               </div>
                             </div>

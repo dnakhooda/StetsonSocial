@@ -66,9 +66,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const eventDateTime = new Date(`${date}T${time}`);
-    const now = new Date();
-    if (eventDateTime < now) {
+    if (isPastEvent(`${date}T${time}`)) {
       return NextResponse.json(
         { error: "Cannot create events in the past" },
         { status: 400 }

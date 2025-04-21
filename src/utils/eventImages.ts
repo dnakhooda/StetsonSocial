@@ -51,7 +51,7 @@ export const eventImages = [
   },
   {
     id: "smashbros",
-    url: "/images/smashbros.avif",
+    url: "/images/smashBros.png",
     label: "Smash Bros",
   },
   {
