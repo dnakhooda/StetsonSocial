@@ -6,7 +6,11 @@ Stetson Social was created using the Next.js framework. ⚡️
 
 ## 🚀 Running the App
 
-After cloning the repository, use one of the following command to start a local server.
+After cloning the repository, use one of the following commands to start a local server:
+
+```bash
+npm install
+```
 
 ```bash
 npm run dev
